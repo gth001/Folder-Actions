@@ -61,6 +61,12 @@
 					<key>COMMAND_STRING</key>
 					<string>#!/bin/bash
 
+# Function to log errors
+log_error() {
+    local LOG_FILE="$HOME/Desktop/converter_error_log.txt"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+}
+
 # Function to move file to trash
 move_to_trash() {
     mv "$1" "$HOME/.Trash/"
@@ -80,29 +86,41 @@ do
     case "$ext" in
         "webm")
             output="$dir/$filename_noext.mp4"
-            echo "Converting $f to $output"
-            if HandBrakeCLI -i "$f" -o "$output" -e x264 -q 20 -B 160; then
-                echo "Moving original to trash"
+            /usr/bin/osascript -e 'tell application "System Events" to display notification "Starting conversion of '"$filename"' to MP4" with title "Video Converter"'
+            
+            # Run HandBrakeCLI and capture any errors
+            if /opt/homebrew/bin/HandBrakeCLI -i "$f" -o "$output" -e x264 -q 20 -B 160 2> /tmp/handbrake_error.txt; then
+                /usr/bin/osascript -e 'tell application "System Events" to display notification "Successfully converted '"$filename"' to MP4" with title "Video Converter"'
                 move_to_trash "$f"
             else
-                echo "Conversion failed, keeping original"
+                log_error "=== WebM Conversion Error ==="
+                log_error "Failed to convert: $filename"
+                log_error "Error output:"
+                cat /tmp/handbrake_error.txt >> "$HOME/Desktop/converter_error_log.txt"
+                log_error "================================\n"
+                /usr/bin/osascript -e 'tell application "System Events" to display notification "Failed to convert '"$filename"'. See error_log for details." with title "Video Converter" sound name "Basso"'
             fi
+            rm -f /tmp/handbrake_error.txt
             ;;
         "webp")
             output="$dir/$filename_noext.jpg"
-            echo "Converting $f to $output"
-            if sips -s format jpeg "$f" --out "$output"; then
-                echo "Moving original to trash"
+            /usr/bin/osascript -e 'tell application "System Events" to display notification "Converting '"$filename"' to JPG" with title "Image Converter"'
+            
+            if sips -s format jpeg "$f" --out "$output" 2> /tmp/sips_error.txt; then
+                /usr/bin/osascript -e 'tell application "System Events" to display notification "Successfully converted '"$filename"' to JPG" with title "Image Converter"'
                 move_to_trash "$f"
             else
-                echo "Conversion failed, keeping original"
+                log_error "=== WebP Conversion Error ==="
+                log_error "Failed to convert: $filename"
+                log_error "Error output:"
+                cat /tmp/sips_error.txt >> "$HOME/Desktop/converter_error_log.txt"
+                log_error "================================\n"
+                /usr/bin/osascript -e 'tell application "System Events" to display notification "Failed to convert '"$filename"'. See error_log for details." with title "Image Converter" sound name "Basso"'
             fi
-            ;;
-        *)
-            echo "Skipping $f (not webp/webm)"
+            rm -f /tmp/sips_error.txt
             ;;
     esac
-done </string>
+done</string>
 					<key>CheckedForUserDefaultShell</key>
 					<true/>
 					<key>inputMethod</key>
@@ -217,7 +235,7 @@ done </string>
 				<key>isViewVisible</key>
 				<integer>1</integer>
 				<key>location</key>
-				<string>339.500000:570.000000</string>
+				<string>339.500000:252.000000</string>
 				<key>nibPath</key>
 				<string>/System/Library/Automator/Run Shell Script.action/Contents/Resources/Base.lproj/main.nib</string>
 			</dict>
