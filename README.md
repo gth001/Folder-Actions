@@ -1,3 +1,3 @@
 # Mac OS Automator folder actions.
 
-I dislike WebM and WebP files because they're not compatible with some things. This macOS Automator folder action automatically runs on any WebM or WebP that exists on your desktop and immediately replaces them with a JPEG or MP4. 
+This causes Mac OS to automatically detect any WebM or WebP file on your desktop. While it helps cloudflare save bandwidth, they're pretty useless outside of a browser. It will immediately replace it with a JPEG or MP4 version, that most apps can actually use.
